@@ -75,5 +75,6 @@ else
 	echo -e "PublicKey = $pubkey # $1"  >> $WG_DIR/$SERVER_WG_IF.conf
 	echo -e "AllowedIPs = $ip/32" >> $WG_DIR/$SERVER_WG_IF.conf
         qrencode -t ansiutf8 < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
+        qrencode -t png -o "$CLIENT_DIR/$1/${1}_wg0.png"  < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
 	echo -e "${GREEN}You can now connect to wireguard with your newly added client${NC}."
 fi
