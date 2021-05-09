@@ -7,6 +7,7 @@ function isRoot() {
                 exit 1
         fi
 }
+
 # Set up colorization
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -29,6 +30,7 @@ CLIENT_WG_IF='wg0'
 CLIENT_DIR='/etc/wireguard/clients'
 CLIENT_IP='192.168.5.'
 WG_TEMPLATE=$CLIENT_DIR/wg0-template.conf
+LAST_IP=$CLIENT_DIR/last-ip.txt
 CLIENT_NAME=''
 CLIENTS=($(wg show $SERVER_WG_IF peers | awk '{print $2}' | tr -d '()' | sed '/^[[:blank:]]*$/d'))
 
@@ -66,7 +68,7 @@ else
         pubkey=$(cat $CLIENT_DIR/$1/$1.pub)
         IP="$CLIENT_IP"$(expr $(cat $CLIENT_DIR/last-ip.txt | tr "." " " | awk '{print $4}') + 1)
 	cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' > $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
-        echo $IP > last-ip.txt
+        echo $IP > $LAST_IP
         echo -e "${GREEN}Created config!${NC}"
         wg set $SERVER_WG_IF peer $(cat $CLIENT_DIR/$1/$1.pub) allowed-ips $IP/32
         echo -e "${GREEN}Adding peer to server's wg conf file${NC}"
