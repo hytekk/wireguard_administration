@@ -1,13 +1,5 @@
 #!/bin/bash
 
-# Check user is running as root
-function isRoot() {
-        if [ "${EUID}" -ne 0 ]; then
-                echo "You need to run this script as root"
-                exit 1
-        fi
-}
-
 # Set up colorization
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,6 +10,33 @@ BOLD='\e[1m'
 normal='\e[0m'
 BLINK='\e[5m'
 NB='\e[25m' # No BLINK
+
+# Check user is running as root
+function isRoot {
+        if [ "${EUID}" -ne 0 ]; then
+                echo -e "${RED}You need to run this script as root${NC}"
+                exit 1
+        fi
+}
+
+# To populate wg show command with peer name
+function wg {
+
+	WG_COLOR_MODE=always command wg "$@" | sed -e "$(while read -r tag eq key hash name; do [ "$tag" == "PublicKey" ] && echo "s#$key#$key ($name)#;"; done < /etc/wireguard/wg0.conf)"
+
+}
+
+# Function to check if peer name already is in use
+function check_peer_name {
+	for i in "${CLIENTS[@]}"; do
+   		if [ "$i" == "$CLIENT_NAME" ] ; then
+        	echo -e "${RED}${BLINK}Peer name already in use. Please choose another name! ${NC}${NB}"; exit;
+    	fi
+	done
+}
+
+echo -e "\e[0mThis script helps you add a peer."
+isRoot
 
 # Variables
 WG_DIR='/etc/wireguard'
@@ -45,15 +64,6 @@ echo -e "Client IP network: ${GREEN}${CLIENT_IP}0${NC}"
 echo -e "Client wg interface: ${RED}$CLIENT_WG_IF${NC}"
 which qrencode | grep -o qrencode > /dev/null && echo -e "qrencode installed? ${GREEN}YES ${NC} (qrencode for peer will be shown at the end)\n\n" || echo "qrencode installed? ${RED}NO${NC} (qrencode will ${ORANGE}NOT${NC} be printed in terminal!\n\n"
 
-# Function to check if peer name already is in use
-function check_peer_name() {
-	for i in "${CLIENTS[@]}"; do
-   		if [ "$i" == "$CLIENT_NAME" ] ; then
-        	echo -e "${RED}${BLINK}Peer name already in use. Please choose another name! ${NC}${NB}"; exit;
-    	fi
-	done
-}
-
 # Add client to running wireguard as well as insert into wg-config file
 if [ $# -eq 0 ]
 then
@@ -75,7 +85,7 @@ else
 	echo -e "\n# $1" >> $WG_DIR/$SERVER_WG_IF.conf
 	echo -e "[Peer]" >> $WG_DIR/$SERVER_WG_IF.conf
 	echo -e "PublicKey = $pubkey # $1"  >> $WG_DIR/$SERVER_WG_IF.conf
-	echo -e "AllowedIPs = $ip/32" >> $WG_DIR/$SERVER_WG_IF.conf
+	echo -e "AllowedIPs = $IP/32" >> $WG_DIR/$SERVER_WG_IF.conf
         qrencode -t ansiutf8 < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
         qrencode -t png -o "$CLIENT_DIR/$1/${1}_wg0.png"  < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
 	echo -e "${GREEN}You can now connect to wireguard with your newly added client${NC}."
