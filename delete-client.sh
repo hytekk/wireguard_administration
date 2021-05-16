@@ -1,14 +1,35 @@
 #!/bin/bash
 
 # Check user is running as root
-function isRoot() {
+function isRoot {
 	if [ "${EUID}" -ne 0 ]; then
-		echo "You need to run this script as root"
+		echo -e "${RED}You need to run this script as root${NC}"
 		exit 1
 	fi
 }
 
-echo -e "\e[0mWELCOME"
+# Function to remove peer from the running wireguard server
+function wg_delete {
+	PEER_DELETE=$(cat $WG_DELETE_PEER | grep -i $item | awk '{print $2}');
+	wg set $SERVER_WG_IF peer $PEER_DELETE remove;
+	rm $CLIENT_DIR/$item/*;
+	rmdir $CLIENT_DIR/$item;
+	echo -e "${BOLD}${RED}DELETED $item${NC}${NORMAL}";
+	exit 1
+}
+
+# Function to remove peer from the wireguard server's config file
+function deleting {
+	sed -i "/^# ${item}/,+4d" $WG_DIR/$SERVER_WG_CONF;
+	wg_delete;
+}
+
+# To populate wg show command with peer name
+function wg {
+
+	WG_COLOR_MODE=always command wg "$@" | sed -e "$(while read -r tag eq key hash name; do [ "$tag" == "PublicKey" ] && echo "s#$key#$key ($name)#;"; done < /etc/wireguard/wg0.conf)"
+
+}
 
 # Set up colorization
 RED='\033[0;31m'
@@ -19,6 +40,9 @@ BOLD='\e[1m'
 NORMAL='\e[0m'
 BLINK='\e[5m'
 NB='\e[25m' # No BLINK
+
+echo -e "\e[0mThis script helps you delete a peer"
+isRoot
 
 # Variables
 WG_DIR='/etc/wireguard'
@@ -35,22 +59,6 @@ wg show $SERVER_WG_IF | grep -i 'peer' | awk '{print $3 " " $2}' | awk -F'\t' '$
 
 # New line, so as to separate each peer when parsed below
 IFS=$'\n'
-
-# Function to remove peer from the running wireguard server
-function wg_delete() {
-	PEER_DELETE=$(cat $WG_DELETE_PEER | grep -i $item | awk '{print $2}');
-	wg set $SERVER_WG_IF peer $PEER_DELETE remove;
-	rm $CLIENT_DIR/$item/*;
-	rmdir $CLIENT_DIR/$item;
-	echo -e "${BOLD}${RED}DELETED $item${NC}${NORMAL}";
-	exit 1
-}
-
-# Function to remove peer from the wireguard server's config file
-function deleting() {
-	sed -i "/^# ${item}/,+4d" $WG_DIR/$SERVER_WG_CONF;
-	wg_delete;
-}
 
 # Declare the array
 WG_PEERS=()
