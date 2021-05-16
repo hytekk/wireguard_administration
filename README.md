@@ -33,7 +33,7 @@ SERVER_PUBLIC_KEY='server_public.key'
 SERVER_PUB_KEY=$(cat $WG_DIR/$SERVER_PUBLIC_KEY)
 CLIENT_WG_IF='wg0'
 CLIENT_DIR='/etc/wireguard/clients'
-CLIENT_IP='192.168.6.'
+CLIENT_IP='192.168.5.'
 WG_TEMPLATE=$WG_DIR/wg0-template.conf
 ```
 
