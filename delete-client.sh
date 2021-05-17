@@ -31,6 +31,16 @@ function wg {
 
 }
 
+function wg_running {
+         if systemctl is-active --quiet wg-quick@wg0.service; then
+                 echo -e ""
+         else
+         else
+                 echo -e "Wireguard needs to be running for this script to work."
+                 exit 1
+         fi
+}
+
 # Set up colorization
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -42,6 +52,7 @@ BLINK='\e[5m'
 NB='\e[25m' # No BLINK
 
 echo -e "\e[0mThis script helps you delete a peer"
+wg_running
 isRoot
 
 # Variables
