@@ -37,7 +37,6 @@ function check_peer_name {
 
 function wg_running {
         if systemctl is-active --quiet wg-quick@wg0.service; then
-                #echo "running"
                 echo -e ""
         else
                 echo -e "Wireguard needs to be running for this script to work."
