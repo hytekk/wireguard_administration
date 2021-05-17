@@ -35,7 +35,18 @@ function check_peer_name {
 	done
 }
 
-echo -e "\e[0mThis script helps you add a peer."
+function wg_running {
+        if systemctl is-active --quiet wg-quick@wg0.service; then
+                #echo "running"
+                echo -e ""
+        else
+                echo -e "Wireguard needs to be running for this script to work."
+                exit 1
+        fi
+}
+
+echo -e "${ORANGE}THIS SCRIPT HELPS YOU ADD A PEER.${NC}"
+wg_running
 isRoot
 
 # Variables
