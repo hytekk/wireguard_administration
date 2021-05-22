@@ -36,7 +36,7 @@ function wg_reload {
 
 # Function to remove peer from the wireguard server's config file
 function deleting {
-	sed -i "/^# ${item}/,+4d" $WG_DIR/$SERVER_WG_CONF;
+	sed -i "/^# ${item}/,/^$/d" $WG_DIR/$SERVER_WG_CONF;
 	wg_delete;
 }
 
