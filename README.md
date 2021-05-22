@@ -9,12 +9,15 @@ Focus is on daily use of the basics - add and delete peers/clients.
 There are mainly 2 bash scripts to help you administer your wireguard instance:
 - add-client.sh
 - delete-client.sh
-- last-ip.txt
+
+And a directory containing:
+- last-ip.txt - to keep state of last used wireguard ip
+- wg0-template.conf - template to generate wg0.conf to peer
+- wg0-template-prekey.conf - template to generate wg0.conf to peer with preshared key
 
 ### Pre requirements
 1. Wireguard, installed on server and basic wg0 is configured.
 2. qrencode, for more ease of use when generating and distributing client configurations.
-
 
 ##### add-client
 ###### Description
@@ -35,6 +38,12 @@ CLIENT_WG_IF='wg0'
 CLIENT_DIR='/etc/wireguard/clients'
 CLIENT_IP='192.168.5.'
 WG_TEMPLATE=$WG_DIR/wg0-template.conf
+WG_TEMPLATE_PREKEY=$CLIENT_DIR/wg0-template-prekey.conf
+LAST_IP=$CLIENT_DIR/last-ip.txt
+CLIENT_NAME=''
+CLIENTS=($(wg show $SERVER_WG_IF peers | awk '{print $2}' | tr -d '()' | sed '/^[[:blank:]]*$/d'))
+WG_REREAD='YES'
+WG_PREKEY='YES'
 ```
 
 ##### delete-client
@@ -52,8 +61,6 @@ ARRAY_FILE='/tmp/WG_array'
 WG_DELETE_PEER='/tmp/WG_delete_peer'
 ```
 
-
-
 #### Contributing
-Since this is my first public display of any code I've written - please give feedback.
+Since this is my first public display of any code I've written - I'm open to feedback.
 Feel free to copy and use whatever you need in your own script. :smiley:
