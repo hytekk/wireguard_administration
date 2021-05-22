@@ -15,6 +15,7 @@ function wg_delete {
 	rm $CLIENT_DIR/$item/*;
 	rmdir $CLIENT_DIR/$item;
 	echo -e "${BOLD}${RED}DELETED $item${NC}${NORMAL}";
+        wg setconf $SERVER_WG_IF $WG_DIR/$SERVER_WG_CONF
 	exit 1
 }
 
