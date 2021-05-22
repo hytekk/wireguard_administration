@@ -7,11 +7,11 @@ Scripts to provision clients for Wireguard. Written to run on the same Linux com
 Focus is on daily use of the basics - add and delete peers/clients.
 
 There are mainly 1 bash script and 2 template scripts to help you administer your wireguard instance:
-- make-install.sh - let's user configure with their own ip's, file paths and more
+- make_install.sh - let's user configure with their own ip's, file paths and more
 - add-client-template.sh
 - delete-client-template.sh
 
-The make-install.sh generates two scripts:
+The make_install.sh generates two scripts:
 - add-client.sh
 - delete-client.sh
 
