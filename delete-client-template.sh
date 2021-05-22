@@ -24,7 +24,7 @@ function wg_reload {
         read -p "$(echo -e "\nWhen you have deleted a client you should reload the configuration to the wireguard server.\nDo you wish to ${RED}${BLINK}restart wireguard now${NC}${NB} (eg quick restart) or manually do it later? ")" yn
         case $yn in
                 [Yy]* ) WG_REREAD='YES';
-                #wg setconf $SERVER_WG_IF $WG_DIR/$SERVER_WG_IF.conf;
+                #wg setconf $SERVER_WG_IF $WG_DIR/$SERVER_WG_CONF;
                 systemctl restart wg-quick@wg0.service;
                 break;;
                 [Nn]* ) WG_REREAD='NO';
@@ -71,10 +71,10 @@ wg_running
 isRoot
 
 # Variables
-WG_DIR='/etc/wireguard'
-CLIENT_DIR='/etc/wireguard/clients'
-SERVER_WG_CONF='wg0.conf'
-SERVER_WG_IF='wg0'
+WG_DIR=;SRV_WG_DIR;
+CLIENT_DIR=;CL_DIR;
+SERVER_WG_IF=;SRV_WG_IF;
+SERVER_WG_CONF=;SRV_WG_IF;.conf
 ARRAY_FILE='/tmp/WG_array'
 WG_DELETE_PEER='/tmp/WG_delete_peer'
 
