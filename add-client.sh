@@ -77,17 +77,19 @@ which qrencode | grep -o qrencode > /dev/null && echo -e "qrencode installed? ${
 # Add client to running wireguard as well as insert into wg-config file
 if [ $# -eq 0 ]
 then
-        echo -e "usage: add-client.sh CLIENT-NAME\n"
+        echo -e "usage: ./add-client.sh CLIENT-NAME\n"
 else
 	CLIENT_NAME="$1"
 	check_peer_name
 	echo -e "Creating client config: $1"
         mkdir -p $CLIENT_DIR/$1
         wg genkey | tee $CLIENT_DIR/$1/$1.priv | wg pubkey > $CLIENT_DIR/$1/$1.pub
+	wg genpsk > $CLIENT_DIR/$1/$1.psk
         key=$(cat $CLIENT_DIR/$1/$1.priv)
         pubkey=$(cat $CLIENT_DIR/$1/$1.pub)
-        IP="$CLIENT_IP"$(expr $(cat $CLIENT_DIR/last-ip.txt | tr "." " " | awk '{print $4}') + 1)
-	cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' > $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
+        prekey=$(cat $CLIENT_DIR/$1/$1.psk)
+	IP="$CLIENT_IP"$(expr $(cat $CLIENT_DIR/last-ip.txt | tr "." " " | awk '{print $4}') + 1)
+	cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
         echo $IP > $LAST_IP
         echo -e "${GREEN}Created config!${NC}"
         wg set $SERVER_WG_IF peer $(cat $CLIENT_DIR/$1/$1.pub) allowed-ips $IP/32
@@ -95,6 +97,7 @@ else
 	echo -e "\n# $1" >> $WG_DIR/$SERVER_WG_IF.conf
 	echo -e "[Peer]" >> $WG_DIR/$SERVER_WG_IF.conf
 	echo -e "PublicKey = $pubkey # $1"  >> $WG_DIR/$SERVER_WG_IF.conf
+        echo -e "PresharedKey = $prekey"  >> $WG_DIR/$SERVER_WG_IF.conf
 	echo -e "AllowedIPs = $IP/32" >> $WG_DIR/$SERVER_WG_IF.conf
         qrencode -t ansiutf8 < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
         qrencode -t png -o "$CLIENT_DIR/$1/${1}_wg0.png"  < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
