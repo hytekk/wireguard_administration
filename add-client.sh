@@ -35,6 +35,70 @@ function check_peer_name {
 	done
 }
 
+function wg_prekey {
+	if [ $WG_PREKEY = 'YES' ]
+	then
+		echo -e "Prekey enabled."
+	        wg genpsk > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk
+		prekey=$(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk)
+		cat $WG_TEMPLATE_PREKEY | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
+	        wg_server
+		echo -e "PresharedKey = $prekey"  >> $WG_DIR/$SERVER_WG_IF.conf
+		wg_reload
+	else
+		echo -e "${ORANGE}Prekey not being used.${NC}"
+		cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
+		wg_server
+	fi
+}
+
+function wg_client {
+	echo -e "Creating client config: $CLIENT_NAME"
+	mkdir -p $CLIENT_DIR/$CLIENT_NAME
+	wg genkey | tee $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.priv | wg pubkey > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.pub
+	key=$(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.priv)
+	pubkey=$(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.pub)
+	echo -e "${GREEN}Created config!${NC}"
+	wg set $SERVER_WG_IF peer $(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.pub) allowed-ips $IP/32
+}
+
+function wg_server {
+	#wg set $SERVER_WG_IF peer $(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.pub) allowed-ips $IP/32
+	echo -e "${GREEN}Adding peer to server's wg conf file${NC}"
+        echo -e "\n# $CLIENT_NAME" >> $WG_DIR/$SERVER_WG_IF.conf
+	echo -e "[Peer]" >> $WG_DIR/$SERVER_WG_IF.conf
+        echo -e "PublicKey = $pubkey # $CLIENT_NAME"  >> $WG_DIR/$SERVER_WG_IF.conf
+	echo -e "AllowedIPs = $IP/32" >> $WG_DIR/$SERVER_WG_IF.conf
+}
+
+function wg_readkey {
+	while true; do
+	read -p "$(echo -e "For enhanced security you should use a preshared key for each client. Do you wish to use a preshared key? ")" yn
+	case $yn in
+		[Yy]* ) WG_PREKEY='YES';
+		break;;
+		[Nn]* ) WG_PREKEY='NO';
+		break;;
+		* ) echo "Please answer Y or N.";;
+	esac
+done
+}
+
+function wg_reload {
+	while true; do
+	read -p "$(echo -e "\nWhen you have added a client with preshared key you need to reload the configuration for the wireguard server.\nDo you wish to ${RED}${BLINK}restart wireguard now${NC}${NB} (eg quick restart) or manually do it later? ")" yn
+	case $yn in
+		[Yy]* ) WG_REREAD='YES';
+		#wg setconf $SERVER_WG_IF $WG_DIR/$SERVER_WG_IF.conf;
+		systemctl restart wg-quick@wg0.service;
+		break;;
+		[Nn]* ) WG_REREAD='NO';
+		break;;
+		* ) echo "Please answer Y or N.";;
+	esac
+	done
+}
+
 function wg_running {
         if systemctl is-active --quiet wg-quick@wg0.service; then
                 echo -e ""
@@ -44,7 +108,7 @@ function wg_running {
         fi
 }
 
-echo -e "${ORANGE}THIS SCRIPT HELPS YOU ADD A PEER.${NC}"
+echo -e "${ORANGE}THIS SCRIPT ASSISTS YOU ADDING A CLIENT (PEER).${NC}"
 wg_running
 isRoot
 
@@ -59,11 +123,14 @@ CLIENT_WG_IF='wg0'
 CLIENT_DIR='/etc/wireguard/clients'
 CLIENT_IP='192.168.5.'
 WG_TEMPLATE=$CLIENT_DIR/wg0-template.conf
+WG_TEMPLATE_PREKEY=$CLIENT_DIR/wg0-template-prekey.conf
 LAST_IP=$CLIENT_DIR/last-ip.txt
 CLIENT_NAME=''
 CLIENTS=($(wg show $SERVER_WG_IF peers | awk '{print $2}' | tr -d '()' | sed '/^[[:blank:]]*$/d'))
+WG_REREAD='YES'
+WG_PREKEY='NO'
 
-# Let user know the configuration
+# Let the user know the configuration
 echo -e "\nWireguard directory: ${GREEN}$WG_DIR${NC}"
 echo -e "Server ip address: ${RED}$SERVER_ADDRESS${NC}"
 echo -e "Server ip port: ${RED}$SERVER_PORT${NC}"
@@ -81,25 +148,12 @@ then
 else
 	CLIENT_NAME="$1"
 	check_peer_name
-	echo -e "Creating client config: $1"
-        mkdir -p $CLIENT_DIR/$1
-        wg genkey | tee $CLIENT_DIR/$1/$1.priv | wg pubkey > $CLIENT_DIR/$1/$1.pub
-	wg genpsk > $CLIENT_DIR/$1/$1.psk
-        key=$(cat $CLIENT_DIR/$1/$1.priv)
-        pubkey=$(cat $CLIENT_DIR/$1/$1.pub)
-        prekey=$(cat $CLIENT_DIR/$1/$1.psk)
 	IP="$CLIENT_IP"$(expr $(cat $CLIENT_DIR/last-ip.txt | tr "." " " | awk '{print $4}') + 1)
-	cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
-        echo $IP > $LAST_IP
-        echo -e "${GREEN}Created config!${NC}"
-        wg set $SERVER_WG_IF peer $(cat $CLIENT_DIR/$1/$1.pub) allowed-ips $IP/32
-        echo -e "${GREEN}Adding peer to server's wg conf file${NC}"
-	echo -e "\n# $1" >> $WG_DIR/$SERVER_WG_IF.conf
-	echo -e "[Peer]" >> $WG_DIR/$SERVER_WG_IF.conf
-	echo -e "PublicKey = $pubkey # $1"  >> $WG_DIR/$SERVER_WG_IF.conf
-        echo -e "PresharedKey = $prekey"  >> $WG_DIR/$SERVER_WG_IF.conf
-	echo -e "AllowedIPs = $IP/32" >> $WG_DIR/$SERVER_WG_IF.conf
-        qrencode -t ansiutf8 < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
-        qrencode -t png -o "$CLIENT_DIR/$1/${1}_wg0.png"  < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
-	echo -e "${GREEN}You can now connect to wireguard with your newly added client${NC}."
+	echo $IP > $LAST_IP
+	wg_readkey
+	wg_client
+	wg_prekey
+	qrencode -t ansiutf8 < "$CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf"
+	qrencode -t png -o "$CLIENT_DIR/$CLIENT_NAME/${1}_wg0.png"  < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
+	echo -e "${GREEN}You can now connect to Wireguard with your newly added client${NC}."
 fi
