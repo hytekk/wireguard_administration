@@ -15,8 +15,23 @@ function wg_delete {
 	rm $CLIENT_DIR/$item/*;
 	rmdir $CLIENT_DIR/$item;
 	echo -e "${BOLD}${RED}DELETED $item${NC}${NORMAL}";
-        wg setconf $SERVER_WG_IF $WG_DIR/$SERVER_WG_CONF
+	wg_reload;
 	exit 1
+}
+
+function wg_reload {
+        while true; do
+        read -p "$(echo -e "\nWhen you have deleted a client you should reload the configuration to the wireguard server.\nDo you wish to ${RED}${BLINK}restart wireguard now${NC}${NB} (eg quick restart) or manually do it later? ")" yn
+        case $yn in
+                [Yy]* ) WG_REREAD='YES';
+                #wg setconf $SERVER_WG_IF $WG_DIR/$SERVER_WG_IF.conf;
+                systemctl restart wg-quick@wg0.service;
+                break;;
+                [Nn]* ) WG_REREAD='NO';
+                break;;
+                * ) echo "Please answer Y or N.";;
+        esac
+        done
 }
 
 # Function to remove peer from the wireguard server's config file
@@ -31,11 +46,10 @@ function wg {
 	WG_COLOR_MODE=always command wg "$@" | sed -e "$(while read -r tag eq key hash name; do [ "$tag" == "PublicKey" ] && echo "s#$key#$key ($name)#;"; done < /etc/wireguard/wg0.conf)"
 
 }
-
 function wg_running {
          if systemctl is-active --quiet wg-quick@wg0.service; then
+                 #echo "running"
                  echo -e ""
-         else
          else
                  echo -e "Wireguard needs to be running for this script to work."
                  exit 1
@@ -52,7 +66,7 @@ NORMAL='\e[0m'
 BLINK='\e[5m'
 NB='\e[25m' # No BLINK
 
-echo -e "\e[0mThis script helps you delete a peer"
+echo -e "${ORANGE}THIS SCRIPT ASSISTS YOU IN DELETING A CLIENT (PEER).${NC}"
 wg_running
 isRoot
 
