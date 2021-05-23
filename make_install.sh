@@ -35,7 +35,7 @@ function go_nogo {
 
 function set_variables {
 	echo $SERVER_IP > $CLIENT_DIR/last-ip.txt
-	cat add-client-template.sh | sed -e 's/;SRV_ADDRESS;/'"\'$SERVER_ADDRESS\'"'/' | sed -e 's|;SRV_WG_DIR;|'"\'$WG_DIR\'"'|' | sed -e 's|;SRV_IP;|'"\'$SERVER_IP\'"'|' | sed -e 's|;SRV_PORT;|'"\'$SERVER_PORT\'"'|'  | sed -e 's|;SRV_WG_IF;|'"\'$SERVER_WG_IF\'"'|' | sed -e 's|;SRV_PUBLIC_KEY;|'"\'$SERVER_PUBLIC_KEY\'"'|' | sed -e 's|;CL_WG_IF;|'"\'$CLIENT_WG_IF\'"'|' | sed -e 's|;CL_DIR;|'"\'$CLIENT_DIR\'"'|' | sed -e 's|;CL_IP;|'"\'$LAST_IP.\'"'|' | sed -e 's|;SRV_WG_REREAD;|'"\'$WG_REREAD\'"'|' | sed -e 's|;SRV_WG_PREKEY;|'"\'$WG_PREKEY\'"'|' > ./add-client.sh
+	cat add-client-template.sh | sed -e 's/;SRV_ADDRESS;/'"\'$SERVER_ADDRESS\'"'/' | sed -e 's|;SRV_WG_DIR;|'"\'$WG_DIR\'"'|' | sed -e 's|;SRV_IP;|'"\'$SERVER_IP\'"'|' | sed -e 's|;SRV_PORT;|'"\'$SERVER_PORT\'"'|'  | sed -e 's|;SRV_WG_IF;|'"\'$SERVER_WG_IF\'"'|' | sed -e 's|;SRV_PUBLIC_KEY;|'"\'$SERVER_PUBLIC_KEY\'"'|' | sed -e 's|;CL_WG_IF;|'"\'$CLIENT_WG_IF\'"'|' | sed -e 's|;CL_DIR;|'"\'$CLIENT_DIR\'"'|' | sed -e 's|;CL_IP;|'"\'$LAST_IP.\'"'|' | sed -e 's|;SRV_WG_REREAD;|'"\'$WG_REREAD\'"'|' | sed -e 's|;SRV_WG_PREKEY;|'"\'$WG_PREKEY\'"'|'| sed -e 's/;CL_DNS;/'"\'$CLIENT_DNS\'"'/' > ./add-client.sh
 	cat delete-client-template.sh | sed -e 's|;SRV_WG_DIR;|'"\'$WG_DIR\'"'|' | sed -e 's|;SRV_WG_IF;|'"\'$SERVER_WG_IF\'"'|' | sed -e 's|;CL_DIR;|'"\'$CLIENT_DIR\'"'|' > ./delete-client.sh
 	chmod +x ./add-client.sh
 	chmod +x ./delete-client.sh
@@ -88,6 +88,11 @@ function add_variables {
 	echo "Enter the default choice when adding a peer as to add a preshared key. YES means to use preshared key. (YES)"
 	read WG_PREKEY
 	WG_PREKEY=${WG_PREKEY:-YES}
+
+	echo "Enter your preferred DNS, comma-separated (1.1.1.1,8.8.4.4)"
+	read CLIENT_DNS
+	CLIENT_DNS=${CLIENT_DNS:-1.1.1.1,8.8.4.4}
+
 }
 
 # Show user configurations
