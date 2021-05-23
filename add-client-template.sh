@@ -41,12 +41,14 @@ function wg_prekey {
 		echo -e "Prekey enabled."
 	        wg genpsk > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk
 		prekey=$(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk)
+		#client_route
 		cat $WG_TEMPLATE_PREKEY | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
 	        wg_server
 		echo -e "PresharedKey = $prekey"  >> $WG_DIR/$SERVER_WG_IF.conf
 		wg_reload
 	else
 		echo -e "${ORANGE}Prekey not being used.${NC}"
+		client_route
 		cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
 		wg_server
 	fi
@@ -83,6 +85,19 @@ function wg_readkey {
 	esac
 done
 }
+
+#function client_route {
+#	while true; do
+#        read -p "$(echo -e "\nDefault is to route all the traffic through the VPN. Do you want to route all the traffic through the VPN (Y) or just the IP (N)? ")" yn
+#        case $yn in
+#                [Yy]* ) CLIENT_ROUTE='YES';
+#                break;;
+#                [Nn]* ) CLIENT_ROUTE='NO';
+#                break;;
+#                * ) echo "Please answer Y or N.";;
+#        esac
+#        done
+#}
 
 function wg_reload {
 	while true; do
@@ -124,6 +139,7 @@ CLIENT_WG_IF=;CL_WG_IF;
 CLIENT_DIR=;CL_DIR;
 CLIENT_IP=;CL_IP;
 CLIENT_DNS=;CL_DNS;
+CLIENT_ROUTE='YES'
 WG_TEMPLATE=$CLIENT_DIR/wg0-template.conf
 WG_TEMPLATE_PREKEY=$CLIENT_DIR/wg0-template-prekey.conf
 LAST_IP=$CLIENT_DIR/last-ip.txt
@@ -153,6 +169,7 @@ else
 	IP="$CLIENT_IP"$(expr $(cat $CLIENT_DIR/last-ip.txt | tr "." " " | awk '{print $4}') + 1)
 	echo $IP > $LAST_IP
 	wg_readkey
+	client_route
 	wg_client
 	wg_prekey
 	qrencode -t ansiutf8 < "$CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf"
