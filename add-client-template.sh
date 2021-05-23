@@ -41,13 +41,13 @@ function wg_prekey {
 		echo -e "Prekey enabled."
 	        wg genpsk > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk
 		prekey=$(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk)
-		cat $WG_TEMPLATE_PREKEY | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
+		cat $WG_TEMPLATE_PREKEY | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
 	        wg_server
 		echo -e "PresharedKey = $prekey"  >> $WG_DIR/$SERVER_WG_IF.conf
 		wg_reload
 	else
 		echo -e "${ORANGE}Prekey not being used.${NC}"
-		cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
+		cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
 		wg_server
 	fi
 }
