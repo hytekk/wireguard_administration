@@ -34,12 +34,17 @@ function go_nogo {
 }
 
 function set_variables {
-	echo $SERVER_IP > $CLIENT_DIR/last-ip.txt
-	cat add-client-template.sh | sed -e 's/;SRV_ADDRESS;/'"\'$SERVER_ADDRESS\'"'/' | sed -e 's|;SRV_WG_DIR;|'"\'$WG_DIR\'"'|' | sed -e 's|;SRV_IP;|'"\'$SERVER_IP\'"'|' | sed -e 's|;SRV_PORT;|'"\'$SERVER_PORT\'"'|'  | sed -e 's|;SRV_WG_IF;|'"\'$SERVER_WG_IF\'"'|' | sed -e 's|;SRV_PUBLIC_KEY;|'"\'$SERVER_PUBLIC_KEY\'"'|' | sed -e 's|;CL_WG_IF;|'"\'$CLIENT_WG_IF\'"'|' | sed -e 's|;CL_DIR;|'"\'$CLIENT_DIR\'"'|' | sed -e 's|;CL_IP;|'"\'$LAST_IP.\'"'|' | sed -e 's|;SRV_WG_REREAD;|'"\'$WG_REREAD\'"'|' | sed -e 's|;SRV_WG_PREKEY;|'"\'$WG_PREKEY\'"'|'| sed -e 's/;CL_DNS;/'"\'$CLIENT_DNS\'"'/' > ./add-client.sh
-	cat delete-client-template.sh | sed -e 's|;SRV_WG_DIR;|'"\'$WG_DIR\'"'|' | sed -e 's|;SRV_WG_IF;|'"\'$SERVER_WG_IF\'"'|' | sed -e 's|;CL_DIR;|'"\'$CLIENT_DIR\'"'|' > ./delete-client.sh
-	chmod +x ./add-client.sh
-	chmod +x ./delete-client.sh
+	mkdir -p $CLIENT_DIR
+        echo $CLIENT_IP | awk -F'.' '{printf "%d.%d.%d.%d", $1, $2, $3, $4 -1}' > $CLIENT_DIR/last-ip.txt	
+	#echo $SERVER_IP > $CLIENT_DIR/last-ip.txt
+	cp clients/wg0-template-prekey.conf $CLIENT_DIR
+        cp clients/wg0-template.conf $CLIENT_DIR
+	cat add-client-template.sh | sed -e 's/;SRV_ADDRESS;/'"\'$SERVER_ADDRESS\'"'/' | sed -e 's|;SRV_WG_DIR;|'"\'$WG_DIR\'"'|' | sed -e 's|;SRV_IP;|'"\'$SERVER_IP\'"'|' | sed -e 's|;SRV_PORT;|'"\'$SERVER_PORT\'"'|'  | sed -e 's|;SRV_WG_IF;|'"\'$SERVER_WG_IF\'"'|' | sed -e 's|;SRV_PUBLIC_KEY;|'"\'$SERVER_PUBLIC_KEY\'"'|' | sed -e 's|;CL_WG_IF;|'"\'$CLIENT_WG_IF\'"'|' | sed -e 's|;CL_DIR;|'"\'$CLIENT_DIR\'"'|' | sed -e 's|;CL_IP;|'"\'$LAST_IP.\'"'|' | sed -e 's|;SRV_WG_REREAD;|'"\'$WG_REREAD\'"'|' | sed -e 's|;SRV_WG_PREKEY;|'"\'$WG_PREKEY\'"'|'| sed -e 's/;CL_DNS;/'"\'$CLIENT_DNS\'"'/' > /usr/local/bin/add-client.sh
+	cat delete-client-template.sh | sed -e 's|;SRV_WG_DIR;|'"\'$WG_DIR\'"'|' | sed -e 's|;SRV_WG_IF;|'"\'$SERVER_WG_IF\'"'|' | sed -e 's|;CL_DIR;|'"\'$CLIENT_DIR\'"'|' > /usr/local//bin/delete-client.sh
+	chmod +x /usr/local/bin/add-client.sh
+	chmod +x /usr/local/bin/delete-client.sh
 	echo -e "${RED}${BOLD}DONE${NC}${normal}"
+	chmod -R 600 $CLIENT_DIR
 }
 
 # Variables
