@@ -48,7 +48,7 @@ function add_variables {
 	read WG_DIR
 	WG_DIR=${WG_DIR:-/etc/wireguard/}
 	
-	echo "Enter your server's public ip or dns (127.0.0.1)"
+	echo "Enter your server's public ip or FQDN (127.0.0.1)"
 	read SERVER_ADDRESS
 	SERVER_ADDRESS=${SERVER_ADDRESS:-127.0.0.1}
 	
@@ -81,11 +81,11 @@ function add_variables {
 	CLIENT_IP=${CLIENT_IP:-192.168.5.2}
 	LAST_IP=$(echo $CLIENT_IP | awk -F'.' '{print $1,$2,$3}' OFS='.')
 	
-	echo "Enter default choice after adding a peer with preshared key. YES means restart wireguard service as to reload the wireguard config. (YES)"
+	echo "Enter default choice when adding a peer with preshared key. YES means restart wireguard service as to reload the wireguard config. (YES)"
 	read WG_REREAD
 	WG_REREAD=${WG_REREAD:-YES}
 	
-	echo "Enter the default choice when adding a peer as to add a preshared key. YES means to use preshared key. (YES)"
+	echo "Enter default choice when adding a peer as to add a preshared key. YES means to use preshared key by default. (YES)"
 	read WG_PREKEY
 	WG_PREKEY=${WG_PREKEY:-YES}
 
@@ -100,8 +100,8 @@ function show_config {
 	echo -e "${ORANGE}${BOLD}DEFAULT VARIABLES${NC}${normal}"
 	echo -e " - server directory: $WG_DIR"
 	echo -e " - server wg interface name: $SERVER_WG_IF"
-	echo -e " - server public IP/adress: $SERVER_ADDRESS"
-	echo -e " - server IP: $SERVER_IP"
+	echo -e " - server public IP/FQDN: $SERVER_ADDRESS"
+	echo -e " - server wg IP: $SERVER_IP"
 	echo -e " - server port: $SERVER_PORT"
 	echo -e " - server wg interface name: $SERVER_WG_IF"
 	echo -e " - server public key name: $SERVER_PUBLIC_KEY"
@@ -109,7 +109,7 @@ function show_config {
 	echo -e " - using preshared key: $WG_PREKEY"
 	echo -e " - client directory: $CLIENT_DIR"
 	echo -e " - client wg interface name: $CLIENT_WG_IF"
-	echo -e " - next client IP: $CLIENT_IP"
+	echo -e " - next client wg IP: $CLIENT_IP"
 }
 
 echo -e "This script makes it easier to configure the add-client.sh by asking the user to define variables. Default values in brackets ( )"
