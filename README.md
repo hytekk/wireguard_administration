@@ -30,6 +30,7 @@ Script to generate client keys and config files as well as set it up on the wire
 The script also makes a check if your client name already is in use.
 It generates a qr code in the terminal for easy setup on a mobile phone. It also saves a qr png for a more portable use.
 All client configurations is stored on the server, by default under '/etc/wireguard/clients/'.
+
 Supports;
 - check if client/peer name already exists
 - tunnel split (LAN) or route all traffic
