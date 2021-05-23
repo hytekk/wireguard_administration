@@ -4,6 +4,7 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
+BLUE='\033[34m'
 ITALIC='\e[3mitalic\e[0m'
 NC='\033[0m' # No Color
 BOLD='\e[1m'
@@ -41,15 +42,15 @@ function wg_prekey {
 		echo -e "Prekey enabled."
 	        wg genpsk > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk
 		prekey=$(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.psk)
-		#client_route
-		cat $WG_TEMPLATE_PREKEY | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
+		client_route
+		cat $WG_TEMPLATE_PREKEY | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IPN"'|' | sed -e 's|;PREKEY;|'"$prekey"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
 	        wg_server
 		echo -e "PresharedKey = $prekey"  >> $WG_DIR/$SERVER_WG_IF.conf
 		wg_reload
 	else
 		echo -e "${ORANGE}Prekey not being used.${NC}"
 		client_route
-		cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IP"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
+		cat $WG_TEMPLATE | sed -e 's/;CLIENT_IP;/'"$IP"'/' | sed -e 's|;CLIENT_KEY;|'"$key"'|' | sed -e 's|;CLIENT_DNS;|'"$CLIENT_DNS"'|' | sed -e 's|;SERVER_PUB_KEY;|'"$SERVER_PUB_KEY"'|' | sed -e 's|;SERVER_ADDRESS;|'"$SERVER_ADDRESS"'|' | sed -e 's|;SERVER_PORT;|'"$SERVER_PORT"'|' | sed -e 's|;ALLOWED_IPS;|'"$IPN"'|' > $CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf
 		wg_server
 	fi
 }
@@ -62,10 +63,10 @@ function wg_client {
 	pubkey=$(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.pub)
 	echo -e "${GREEN}Created config!${NC}"
 	wg set $SERVER_WG_IF peer $(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.pub) allowed-ips $IP/32
+	chmod -R 600 $CLIENT_DIR/$CLIENT_NAME
 }
 
 function wg_server {
-	#wg set $SERVER_WG_IF peer $(cat $CLIENT_DIR/$CLIENT_NAME/$CLIENT_NAME.pub) allowed-ips $IP/32
 	echo -e "${GREEN}Adding peer to server's wg conf file${NC}"
         echo -e "\n# $CLIENT_NAME" >> $WG_DIR/$SERVER_WG_IF.conf
 	echo -e "[Peer]" >> $WG_DIR/$SERVER_WG_IF.conf
@@ -83,21 +84,25 @@ function wg_readkey {
 		break;;
 		* ) echo "Please answer Y or N.";;
 	esac
-done
+	done
 }
 
-#function client_route {
-#	while true; do
-#        read -p "$(echo -e "\nDefault is to route all the traffic through the VPN. Do you want to route all the traffic through the VPN (Y) or just the IP (N)? ")" yn
-#        case $yn in
-#                [Yy]* ) CLIENT_ROUTE='YES';
-#                break;;
-#                [Nn]* ) CLIENT_ROUTE='NO';
-#                break;;
-#                * ) echo "Please answer Y or N.";;
-#        esac
-#        done
-#}
+function client_route {
+	while true; do
+        read -p "$(echo -e "\nDefault is to route all the traffic through the VPN. Do you want to route all the traffic through the VPN (Y) or just the IP (N)? ")" yn
+        case $yn in
+                #[Yy]* ) CLIENT_ROUTE='YES';
+                [Yy]* ) echo -e "All traffic is going to be rooted.";
+		IPN='0.0.0.0/0';
+                break;;
+                #[Nn]* ) CLIENT_ROUTE='NO';
+                [Nn]* ) echo -e "Only $IP\/32 is going to be routed.";
+		IPN=$(echo $IP | awk -F'.' '{printf "%d.%d.%d.%d", $1, $2, $3, 0}'  ; printf '/24');
+                break;;
+                * ) echo "Please answer Y or N.";;
+        esac
+        done
+}
 
 function wg_reload {
 	while true; do
@@ -169,10 +174,10 @@ else
 	IP="$CLIENT_IP"$(expr $(cat $CLIENT_DIR/last-ip.txt | tr "." " " | awk '{print $4}') + 1)
 	echo $IP > $LAST_IP
 	wg_readkey
-	client_route
 	wg_client
 	wg_prekey
 	qrencode -t ansiutf8 < "$CLIENT_DIR/$CLIENT_NAME/$CLIENT_WG_IF.conf"
 	qrencode -t png -o "$CLIENT_DIR/$CLIENT_NAME/${1}_wg0.png"  < $CLIENT_DIR/$1/$CLIENT_WG_IF.conf
+        chmod -R 600 $CLIENT_DIR/$CLIENT_NAME
 	echo -e "${GREEN}You can now connect to Wireguard with your newly added client${NC}."
 fi
